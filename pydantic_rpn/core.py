@@ -226,7 +226,11 @@ class RPN(BaseModel):
     def _is_number(self, token_str: str) -> bool:
         """Check if string can be parsed as a number."""
         try:
-            float(token_str)
+            # Try to parse as int first, then float
+            if '.' in token_str or 'e' in token_str.lower():
+                float(token_str)
+            else:
+                int(token_str)
             return True
         except ValueError:
             return False
@@ -286,12 +290,14 @@ class RPN(BaseModel):
                 raise EvaluationError(f"Error evaluating token '{token}': {str(e)}") from e
         
         if len(stack) == 0:
-            # Empty expression returns True
+            # Empty expression returns True (or could return 0)
             return True
-        elif len(stack) != 1:
-            raise EvaluationError(f"Invalid expression: stack has {len(stack)} items, expected 1")
-        
-        return stack[0]
+        elif len(stack) == 1:
+            return stack[0]
+        else:
+            # HP calculator behavior: return top of stack if multiple items
+            # This allows partial expressions and stack operations
+            return stack[-1]
     
     def _resolve_token(self, token: Any, context: Dict[str, Any]) -> Union[int, float, bool]:
         """Resolve a token to its numeric value."""
@@ -310,7 +316,11 @@ class RPN(BaseModel):
         
         # Try to parse as number
         try:
-            return float(token_str) if '.' in token_str else int(token_str)
+            # Check if it looks like a float (contains ., e, or E for scientific notation)
+            if '.' in token_str or 'e' in token_str.lower():
+                return float(token_str)
+            else:
+                return int(token_str)
         except ValueError:
             raise EvaluationError(f"Unknown token: '{token}'")
     
@@ -516,6 +526,68 @@ class RPNBuilder:
     def sqrt(self) -> 'RPNBuilder':
         """Add square root function."""
         self.tokens.append('sqrt')
+        return self
+    
+    # Stack operations
+    def dup(self) -> 'RPNBuilder':
+        """Add dup stack operation."""
+        self.tokens.append('dup')
+        return self
+    
+    def swap(self) -> 'RPNBuilder':
+        """Add swap stack operation."""
+        self.tokens.append('swap')
+        return self
+    
+    def drop(self) -> 'RPNBuilder':
+        """Add drop stack operation."""
+        self.tokens.append('drop')
+        return self
+    
+    def rot(self) -> 'RPNBuilder':
+        """Add rot stack operation."""
+        self.tokens.append('rot')
+        return self
+    
+    def over(self) -> 'RPNBuilder':
+        """Add over stack operation."""
+        self.tokens.append('over')
+        return self
+    
+    # Math functions
+    def abs(self) -> 'RPNBuilder':
+        """Add absolute value function."""
+        self.tokens.append('abs')
+        return self
+    
+    def sin(self) -> 'RPNBuilder':
+        """Add sine function."""
+        self.tokens.append('sin')
+        return self
+    
+    def cos(self) -> 'RPNBuilder':
+        """Add cosine function."""
+        self.tokens.append('cos')
+        return self
+    
+    def tan(self) -> 'RPNBuilder':
+        """Add tangent function."""
+        self.tokens.append('tan')
+        return self
+    
+    def log(self) -> 'RPNBuilder':
+        """Add log10 function."""
+        self.tokens.append('log')
+        return self
+    
+    def ln(self) -> 'RPNBuilder':
+        """Add natural log function."""
+        self.tokens.append('ln')
+        return self
+    
+    def exp(self) -> 'RPNBuilder':
+        """Add exponential function."""
+        self.tokens.append('exp')
         return self
     
     def build(self) -> RPN:
