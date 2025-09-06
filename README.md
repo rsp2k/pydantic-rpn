@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/pydantic-rpn.svg)](https://badge.fury.io/py/pydantic-rpn)
 [![Python Support](https://img.shields.io/pypi/pyversions/pydantic-rpn.svg)](https://pypi.org/project/pydantic-rpn/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/rsp2k/pydantic-rpn/actions/workflows/test.yml/badge.svg)](https://github.com/rsp2k/pydantic-rpn/actions/workflows/test.yml)
+[![Tests](https://img.shields.io/badge/Tests-150%2F150%20✅-brightgreen)](https://github.com/rsp2k/pydantic-rpn)
 
 **Finally!** A Reverse Polish Notation library that doesn't make you want to throw your calculator out the window! 🎯
 
