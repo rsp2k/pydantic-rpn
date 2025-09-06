@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pydantic-rpn"
-version = "0.3.0"
+version = "2025.09.06"
 description = "A delightful Python library for Reverse Polish Notation with Pydantic integration"
 readme = "README.md"
 requires-python = ">=3.8"
