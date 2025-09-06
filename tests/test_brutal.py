@@ -189,25 +189,25 @@ class TestValidationBrutal:
         for op in binary_ops:
             # No operands
             with pytest.raises(ValidationError):
-                RPN(f"{op}")
+                RPN(f"{op}", strict=True)
             # One operand  
             with pytest.raises(ValidationError):
-                RPN(f"5 {op}")
+                RPN(f"5 {op}", strict=True)
 
         unary_ops = ['abs', 'neg', 'sqrt', 'sin', 'cos', 'tan', 'log', 'ln', 'exp', 'ceil', 'floor', 'round', 'not']
         for op in unary_ops:
             # No operands
             with pytest.raises(ValidationError):
-                RPN(f"{op}")
+                RPN(f"{op}", strict=True)
 
     def test_too_many_operands(self):
         """Test expressions that leave too many items on stack."""
         with pytest.raises(ValidationError):
-            RPN("1 2 3 +")  # Leaves 2 items: 1, 5
+            RPN("1 2 3 +", strict=True)  # Leaves 2 items: 1, 5
         with pytest.raises(ValidationError): 
-            RPN("1 2 3 4 + +")  # Leaves 2 items: 1, 9
+            RPN("1 2 3 4 + +", strict=True)  # Leaves 2 items: 1, 9
         with pytest.raises(ValidationError):
-            RPN("5 6 7 8 9")  # Leaves 5 items
+            RPN("5 6 7 8 9", strict=True)  # Leaves 5 items
 
     def test_empty_expression_edge_case(self):
         """Test empty expressions."""
@@ -287,7 +287,7 @@ class TestClaimedFeaturesTesting:
         """Check what actually works with method chaining."""
         # This creates intermediate invalid states
         with pytest.raises(ValidationError):
-            RPN("5").push(3)  # Creates "5 3" which is invalid
+            RPN("5", strict=True).push(3)  # Creates "5 3" which is invalid
             
         # Non-strict mode allows it but validation still fails
         expr = RPN("5", strict=False).push(3)

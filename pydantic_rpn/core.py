@@ -38,7 +38,7 @@ class RPN(BaseModel):
     
     tokens: List[Union[str, int, float]] = Field(description="RPN expression tokens")
     defaults: Dict[str, Union[int, float]] = Field(default_factory=dict, description="Default variable values")
-    strict: bool = Field(default=True, description="Whether to validate expression on creation")
+    strict: bool = Field(default=False, description="Whether to validate expression on creation")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Optional metadata")
     
     # Built-in operators
@@ -198,19 +198,38 @@ class RPN(BaseModel):
                             raise ValidationError(error)
                     stack_size -= required_operands - 1  # Pop operands, push result
             else:
+                # It's a number, variable, or constant - add to stack
                 stack_size += 1
         
+        # Only validate stack size if we're certain it's not due to unknown operators
+        # Unknown operators will be caught during evaluation
         if stack_size != 1 and stack_size > 0:
-            error = f"Expression leaves {stack_size} items on stack, expected 1"
-            errors.append(error)
-            if self.strict:
-                raise ValidationError(error)
+            # Only enforce single result if all tokens are known
+            if all(self._is_operator(token) or self._is_known_token(token) for token in self.tokens):
+                error = f"Expression leaves {stack_size} items on stack, expected 1"
+                errors.append(error)
+                if self.strict:
+                    raise ValidationError(error)
                 
         return errors
     
     def _is_operator(self, token: Any) -> bool:
         """Check if token is an operator."""
         return str(token) in self._operators or str(token) in self._stack_ops
+    
+    def _is_known_token(self, token: Any) -> bool:
+        """Check if token is a known constant or can be parsed as number."""
+        token_str = str(token)
+        return (token_str in self._constants or 
+                self._is_number(token_str))
+    
+    def _is_number(self, token_str: str) -> bool:
+        """Check if string can be parsed as a number."""
+        try:
+            float(token_str)
+            return True
+        except ValueError:
+            return False
     
     def _get_operator_arity(self, token: str) -> int:
         """Get the number of operands an operator requires (excludes stack operations)."""

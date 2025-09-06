@@ -204,7 +204,7 @@ This library comes with the most entertaining examples in mathematical computing
 - **🕹️ Retro Computing**: From punch cards to pixels via RPN
 - **🎪 Fun Calculator Tricks**: Upside-down words and mathematical magic
 
-Check out the `examples/` directory for hours of mathematical entertainment!
+Check out the [examples](https://github.com/rsp2k/pydantic-rpn/tree/main/examples) directory for hours of mathematical entertainment!
 
 ## 🚀 Installation & Usage
 
@@ -246,6 +246,14 @@ MIT License - because sharing is caring! See [LICENSE](LICENSE) for details.
 - **The Pydantic Team** - for type safety that doesn't make us cry
 - **John Backus** - for showing us that postfix notation is the way
 - **Everyone who suffered through infix notation** - this one's for you! 🍻
+
+## 🔗 Related Resources
+
+- **[JRPN Calculator](https://jrpn.jovial.com/)** - An amazing online RPN calculator that captures the HP calculator experience perfectly!
+- **[HP Calculator Museum](https://www.hpcalc.org/)** - The ultimate resource for HP calculator history, manuals, and programs
+- **[HP Calculator Literature](https://literature.hpcalc.org/)** - Comprehensive collection of HP calculator manuals, handbooks, and programming guides
+- **[Linux HP Calculator Guide](http://linuxfocus.org/~guido/hp_calc/)** - Comprehensive guide to HP calculators on Linux systems
+- **[PC Calculator Programs](https://www.hpcalc.org/other/pc/)** - Collection of HP calculator simulators and programs for PC
 
 ---
 
