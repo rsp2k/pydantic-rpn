@@ -299,6 +299,10 @@ class RPN(BaseModel):
             # This allows partial expressions and stack operations
             return stack[-1]
     
+    def __call__(self, **variables) -> Union[int, float, bool]:
+        """Make RPN objects directly callable - cleaner than .eval()"""
+        return self.eval(**variables)
+    
     def _resolve_token(self, token: Any, context: Dict[str, Any]) -> Union[int, float, bool]:
         """Resolve a token to its numeric value."""
         if isinstance(token, (int, float, bool)):
@@ -597,9 +601,277 @@ class RPNBuilder:
     def eval(self, **variables) -> Union[int, float, bool]:
         """Build and evaluate in one step."""
         return self.build().eval(**variables)
+    
+    def __call__(self, **variables) -> Union[int, float, bool]:
+        """Make RPNBuilder directly callable - cleaner than .eval()"""
+        return self.eval(**variables)
 
 
-# Convenience functions
-def rpn(expression: Union[str, List]) -> RPN:
-    """Convenience function to create RPN expressions."""
-    return RPN(expression)
+# Enhanced RPN expression class with operator overloading
+class RPNExpr:
+    """
+    Pythonic RPN expressions with operator overloading.
+    
+    Used internally by rpn() function. Supports auto-wrapping of numbers:
+        rpn(3) + 4 * 2  # Only need rpn() once - numbers auto-wrap
+    """
+    
+    def __init__(self, value: Union[str, List, int, float]):
+        if isinstance(value, (int, float)):
+            # Single number
+            self._rpn = RPN([value])
+        elif isinstance(value, str):
+            if ' ' in value:
+                # Multi-token expression like "3 4 +"
+                self._rpn = RPN(value)
+            else:
+                # Single variable or number token
+                self._rpn = RPN([value])
+        elif isinstance(value, list):
+            # Token list
+            self._rpn = RPN(value)
+        else:
+            raise TypeError(f"Cannot create RPNExpr from {type(value)}")
+    
+    def _ensure_rpn_expr(self, other) -> 'RPNExpr':
+        """Convert numbers and RPN objects to RPNExpr objects automatically"""
+        if isinstance(other, RPNExpr):
+            return other
+        elif isinstance(other, (int, float, str)):
+            return RPNExpr(other)
+        elif isinstance(other, RPN):
+            result = RPNExpr(0)
+            result._rpn = other
+            return result
+        else:
+            raise TypeError(f"Cannot convert {type(other)} to RPNExpr object")
+    
+    def __add__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)  # Dummy value, will be replaced
+        result._rpn = self._rpn + other_v._rpn + RPN(['+'])
+        return result
+    
+    def __radd__(self, other) -> 'RPNExpr':
+        """Support 3 + RPNExpr(4) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['+'])
+        return result
+    
+    def __sub__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['-'])
+        return result
+    
+    def __rsub__(self, other) -> 'RPNExpr':
+        """Support 10 - V(3) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['-'])
+        return result
+    
+    def __mul__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['*'])
+        return result
+    
+    def __rmul__(self, other) -> 'RPNExpr':
+        """Support 5 * V(2) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['*'])
+        return result
+    
+    def __truediv__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['/'])
+        return result
+    
+    def __rtruediv__(self, other) -> 'RPNExpr':
+        """Support 100 / V(5) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['/'])
+        return result
+    
+    def __pow__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['**'])
+        return result
+    
+    def __rpow__(self, other) -> 'RPNExpr':
+        """Support 2 ** V(3) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['**'])
+        return result
+    
+    def __floordiv__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['//'])
+        return result
+    
+    def __rfloordiv__(self, other) -> 'RPNExpr':
+        """Support 17 // V(5) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['//'])
+        return result
+    
+    def __mod__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['%'])
+        return result
+    
+    def __rmod__(self, other) -> 'RPNExpr':
+        """Support 17 % V(5) syntax"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = other_v._rpn + self._rpn + RPN(['%'])
+        return result
+    
+    # Comparison operators with auto-wrapping
+    def __eq__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['=='])
+        return result
+    
+    def __lt__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['<'])
+        return result
+    
+    def __le__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['<='])
+        return result
+    
+    def __gt__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['>'])
+        return result
+    
+    def __ge__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['>='])
+        return result
+    
+    def __ne__(self, other) -> 'RPNExpr':
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['!='])
+        return result
+    
+    # Unary operations as methods
+    def sqrt(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['sqrt'])
+        return result
+    
+    def abs(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['abs'])
+        return result
+    
+    def neg(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['neg'])
+        return result
+    
+    def sin(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['sin'])
+        return result
+    
+    def cos(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['cos'])
+        return result
+    
+    def tan(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['tan'])
+        return result
+    
+    def log(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['log'])
+        return result
+    
+    def ln(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['ln'])
+        return result
+    
+    def exp(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['exp'])
+        return result
+    
+    # Stack operations
+    def dup(self) -> 'RPNExpr':
+        result = RPNExpr(0)
+        result._rpn = self._rpn + RPN(['dup'])
+        return result
+    
+    def swap(self, other) -> 'RPNExpr':
+        """Swap with another value"""
+        other_v = self._ensure_rpn_expr(other)
+        result = RPNExpr(0)
+        result._rpn = self._rpn + other_v._rpn + RPN(['swap'])
+        return result
+    
+    # Evaluation and conversion methods
+    def __call__(self, **variables) -> Union[int, float, bool]:
+        """Make V objects directly callable"""
+        return self._rpn(**variables)
+    
+    def eval(self, **variables) -> Union[int, float, bool]:
+        """Evaluate the expression"""
+        return self._rpn.eval(**variables)
+    
+    def to_rpn(self) -> RPN:
+        """Convert to RPN object"""
+        return self._rpn
+    
+    def to_string(self) -> str:
+        """Get the RPN expression as a string"""
+        return ' '.join(str(token) for token in self._rpn.tokens)
+    
+    def __str__(self) -> str:
+        return f"rpn({self.to_string()})"
+    
+    def __repr__(self) -> str:
+        return f"rpn({self.to_string()})"
+
+
+# Simple, clean rpn function that supports operators
+def rpn(value: Union[str, List, int, float]) -> 'RPNExpr':
+    """
+    The ONE way to create RPN expressions - clean and pythonic.
+    
+    Examples:
+        # Clean operator syntax - the best way!
+        result = rpn(3) + 4 * 2        # Auto-wrapping: only need rpn() once
+        formula = rpn('revenue') - 800 * 0.1  # Variables work perfectly
+        
+        # Traditional syntax still works if you prefer  
+        result = rpn("3 4 + 2 *")()    # Same result
+        
+        # Call directly to evaluate
+        print(result())                # 14
+        print(formula(revenue=1000))   # 920.0
+    """
+    return RPNExpr(value)
