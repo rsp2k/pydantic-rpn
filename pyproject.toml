@@ -51,10 +51,10 @@ numpy = ["numpy>=1.20.0"]
 pandas = ["pandas>=1.3.0"]
 
 [project.urls]
-Homepage = "https://github.com/anthropics/pydantic-rpn"
-Repository = "https://github.com/anthropics/pydantic-rpn.git"
-Documentation = "https://pydantic-rpn.readthedocs.io"
-"Bug Tracker" = "https://github.com/anthropics/pydantic-rpn/issues"
+Homepage = "https://github.com/rsp2k/pydantic-rpn"
+Repository = "https://github.com/rsp2k/pydantic-rpn.git"
+Documentation = "https://github.com/rsp2k/pydantic-rpn#readme"
+"Bug Tracker" = "https://github.com/rsp2k/pydantic-rpn/issues"
 
 [project.scripts]
 rpn = "pydantic_rpn.cli:main"
